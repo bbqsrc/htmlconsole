@@ -31,10 +31,7 @@ HtmlConsole.stylesheetData = (function() {
 		"  margin: 0;\n" + 
 		"  margin-bottom: 3px;\n" +
 		"  padding: 6px 0px;\n" +
-		"}\n\n" +
-		".ec-hide {\n" +
-		"  display: none;\n" +
-		"}\n";
+		"}\n\n";
 	return css;
 })();
 
@@ -47,7 +44,7 @@ HtmlConsole.addMessage = function(msg) {
 	if (ec) {
 		messages = ec.children[1];
 		messages.appendChild(p);
-		ec.setAttribute("class", null);
+		ec.style.display = "";
 	}
 	messages.scrollTop = messages.scrollHeight;
 };
@@ -62,7 +59,7 @@ HtmlConsole.createHtmlConsole = function() {
 		child;
 	
 	div.setAttribute("id", "error-console");
-	div.setAttribute("class", "ec-hide");
+	div.style.display = "none";	
 
 	title.setAttribute("class", "ec-caption");
 	title.appendChild(document.createTextNode("Error Console"));
@@ -103,6 +100,7 @@ HtmlConsole.createCSS = function() {
 	css.type = "text/css";
 	css.media = "screen";
 	
+	// Another IE oddity here.
 	if (css.styleSheet) {
 		css.styleSheet.cssText = HtmlConsole.stylesheetData;
 	} else {
@@ -133,6 +131,11 @@ HtmlConsole.onError = function(msg, url, line) {
 	} else {
 		HtmlConsole.errorList.push("<b>["+url+":"+line+"]</b> "+msg);
 	}
+
+	// Firefox and Chrome expect false to propagate, the rest expect true...
+	if (/(Firefox|Chrome)/.test(navigator.userAgent)) {
+		return false;
+	}
 	return true;
 };
 
@@ -147,16 +150,16 @@ HtmlConsole.onLoad = function() {
 	}
 };
 
-
-if (window.addEventListener) {
-	window.addEventListener("load", HtmlConsole.onLoad, false);
-	window.addEventListener("error", HtmlConsole.onError, false);
-} else {
-	HtmlConsole.oldOnLoad = window.onload;
-	HtmlConsole.oldOnError = window.onerror;
-	window.onload =	HtmlConsole.onLoad;
-	window.onerror = HtmlConsole.onError;
-}
+/*
+ * Trust me when I say this is really the only way to make this work.
+ * 
+ * On Firefox, the event handler will be passed an event object, not the error
+ * messages as expected. Sadface.
+ */
+HtmlConsole.oldOnLoad = window.onload;
+HtmlConsole.oldOnError = window.onerror;
+window.onload =	HtmlConsole.onLoad;
+window.onerror = HtmlConsole.onError;
 
 HtmlConsole.overrideConsole();
 HtmlConsole.createCSS();
