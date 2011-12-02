@@ -43,10 +43,14 @@ HtmlConsole.addMessage = function(msg) {
 	p.innerHTML = msg.replace(/\n/g, "<br>");
 	if (ec) {
 		messages = ec.children[1];
+		if (messages == null) {
+			return;
+		}
 		messages.appendChild(p);
 		ec.style.display = "";
+		messages.scrollTop = messages.scrollHeight;
+		
 	}
-	messages.scrollTop = messages.scrollHeight;
 };
 
 
@@ -83,12 +87,16 @@ HtmlConsole.overrideConsole = function() {
 	if (typeof console == "undefined") {
 		window.console = {};
 	}
-
+	
 	var oldlog = console.log;
+	HtmlConsole.oldLog = function(msg) {
+		oldlog.apply(console, arguments);
+	};
+	
 	console.log = function(msg) {
-		HtmlConsole.addMessage(msg);
-		if (oldlog) {
-			oldlog(msg);
+		HtmlConsole.addMessage("" + msg);
+		if (HtmlConsole.oldLog) {
+			HtmlConsole.oldLog(msg);
 		}
 	}
 };
